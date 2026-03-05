@@ -783,22 +783,37 @@ bd create "[Task Title]" -t task -p [P1/P2] \
 
 #### Cross-Rig Mode
 
-Group tasks by target rig. For each rig, `cd` to that rig's beads path
-before creating:
+For each secondary rig, create a **local epic** first so that `--parent`
+works and `gt mq integration create` can operate natively:
 
 ```bash
-# Tasks targeting a different rig (e.g., node0):
+# Step 1: Create a local epic in each secondary rig
+cd ~/gt/node0/mayor/rig
+bd create '<root-epic-title>: node0 component' -t epic -p [P1/P2] \
+  -d 'Local epic for node0 components. Cross-rig root: $EPIC_ID in [primary-rig].'
+# Capture → NODE0_LOCAL_EPIC_ID
+cd -  # Return to primary rig
+```
+
+Then create tasks with `--parent` pointing to the **local epic**:
+
+```bash
+# Step 2: Create tasks under the local epic
 cd ~/gt/node0/mayor/rig
 bd create "[Task Title]" -t task -p [P1/P2] \
+  --parent $NODE0_LOCAL_EPIC_ID \
   -d "[Full description from draft]" \
   --acceptance "[Acceptance criteria]"
 cd -  # Return to primary rig
 ```
 
+Each rig's local epic enables `gt mq integration create` to work
+natively — no manual branches needed.
+
 **Cross-rig rules:**
-- `--parent` does NOT work cross-rig (parent must be in same DB).
-  Record the logical parent in the description instead:
-  `"Logical parent: pe-k0e.3 (Phase 3 epic in petals)"`
+- `--parent` uses the **local epic** in each secondary rig's DB.
+  Also record the cross-rig root in the description:
+  `"Cross-rig root: pe-k0e (root epic in petals)"`
 - `--deps` works cross-rig for blocking deps — use full bead IDs
   with prefix: `--deps "pe-k0e.1.3"` (petals bead blocking node0 task)
 - If `--deps` fails cross-rig, use `bd dep add` from the HQ level:
@@ -845,13 +860,15 @@ is least critical). Use `bd dep remove <blocked-id> <blocker-id>` to fix.
 gt mq integration create $EPIC_ID
 ```
 
-**Cross-rig:** Create integration branches in EACH rig that has tasks:
+**Cross-rig:** Each secondary rig has its own local epic, so
+`gt mq integration create` works natively in every rig:
 ```bash
-gt mq integration create $EPIC_ID                    # Primary rig
-cd ~/gt/[other-rig] && gt mq integration create ...  # Each target rig
+gt mq integration create $EPIC_ID                         # Primary rig
+cd ~/gt/node0/mayor/rig && gt mq integration create $NODE0_LOCAL_EPIC_ID  # Each secondary rig
 ```
 
-Each rig's polecats merge into their own integration branch.
+No manual branch creation needed — each rig's local epic provides the
+anchor for `gt mq integration create`.
 
 ## ID Tracking
 
@@ -932,6 +949,16 @@ Write to: `plans/{{feature}}/04-beads/beads-report.md`
 
 ---
 
+## Local Epics (Cross-Rig)
+
+| Rig | Local Epic ID | Local Epic Title | Root Epic (Primary Rig) |
+|-----|--------------|------------------|------------------------|
+| [primary] | [root-epic-id] | {{feature}} | — (this is the root) |
+| [secondary-rig] | [local-epic-id] | {{feature}}: [rig] component | [root-epic-id] in [primary] |
+...
+
+---
+
 ## Dependency Graph
 
 ```
@@ -962,10 +989,10 @@ Items with no blockers (can start immediately):
 
 ## Integration Branches
 
-| Rig | Epic | Branch |
-|-----|------|--------|
-| [primary] | [id] | [branch name] |
-| [other rig] | [id or N/A] | [branch name] |
+| Rig | Local Epic ID | Branch | Created Via |
+|-----|--------------|--------|-------------|
+| [primary] | [root-epic-id] | [branch name] | `gt mq integration create` |
+| [secondary-rig] | [local-epic-id] | [branch name] | `gt mq integration create` |
 
 ---
 
