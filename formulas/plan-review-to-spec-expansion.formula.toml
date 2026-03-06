@@ -61,6 +61,7 @@ version = 1
 
 # Note: vars are inherited from the parent workflow that expands this
 # Required vars: feature
+# Optional vars: rigs (comma-separated target rigs; empty = single-rig mode)
 
 # ============================================================================
 # STEP 1: LOAD INPUTS
@@ -201,6 +202,8 @@ Check that the plan addresses cross-cutting spec requirements:
 - Testing strategy covers spec scenarios
 - Performance requirements have plan coverage
 - Security requirements are addressed
+- Rig assignments (when `{{rigs}}` is set): every task has a Target Rig
+  from {{rigs}}, and the assignment matches the task's file paths
 
 ## Output
 

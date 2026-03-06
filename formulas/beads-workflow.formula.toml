@@ -8,7 +8,8 @@
 #
 # Usage:
 #   gt sling beads-workflow <crew> \
-#     --var feature="command-palette"
+#     --var feature="command-palette" \
+#     --var rigs="gt_toolkit,sf_workflows,sfgastown"
 
 description = """
 Beads workflow from reviewed plan to verified beads hierarchy.
@@ -61,6 +62,10 @@ version = 2
 description = "Feature name (used for all input/output paths)"
 required = true
 
+[vars.rigs]
+description = "Comma-separated target rigs (e.g. gt_toolkit,sf_workflows,sfgastown). Empty = single-rig mode."
+required = false
+
 # ============================================================================
 # KICKOFF: Workflow banner
 # ============================================================================
@@ -78,7 +83,8 @@ description = """
   2. Beads Review — three agents verify beads-to-plan alignment
 
  Input:  Reviewed plan at plans/{feature}/03-plan/plan.md
- Output: Verified beads hierarchy ready for implementation
+ Rigs:   {{rigs}} (empty = single-rig mode)
+ Output: Staged convoy ready for epic-delivery launch
 ═══════════════════════════════════════════════════════════════
 
 Output this banner to the user, then close this step to begin.
@@ -164,28 +170,69 @@ This step is expanded into the full review workflow:
 """
 
 # ============================================================================
+# STEP 3: CONVOY CREATE & STAGE
+# ============================================================================
+
+[[steps]]
+id = "step-3-convoy-stage"
+needs = ["step-2-beads-review"]
+title = "Step 3: Convoy Create & Stage"
+description = """
+Create a convoy with all leaf beads and stage it. Cross-rig convoys are
+executed by the mayor.
+
+### 1. Gather leaf bead IDs
+Collect all non-epic bead IDs created in Step 1. Exclude epics and sub-epics.
+For cross-rig projects ({{rigs}} set), gather from ALL target rigs:
+```bash
+# For each rig in {{rigs}}, list open leaves:
+cd ~/gt/<rig>/mayor/rig && bd list --parent <local-epic-id> --status open --json
+```
+For single-rig, just: `bd list --parent $EPIC_ID --status open --json`
+
+### 2. Create convoy
+```bash
+gt convoy create "{{feature}} delivery" <leaf-id-1> <leaf-id-2> ... <leaf-id-n>
+```
+Record the convoy ID.
+
+### 3. Stage convoy
+```bash
+gt convoy stage <convoy-id>
+```
+Staging validates: all beads exist and are open, dependencies are acyclic,
+wave computation succeeds (parallelizable groups identified).
+
+### 4. Verify staging passed
+If staging fails, fix the issues and re-stage. Do NOT proceed until
+staging passes. Record the convoy ID for epic-delivery.
+"""
+
+# ============================================================================
 # COMPLETE: Summary
 # ============================================================================
 
 [[steps]]
 id = "complete"
 title = "Workflow Complete"
-needs = ["step-2-beads-review"]
+needs = ["step-3-convoy-stage"]
 description = """
-Beads workflow is complete.
+Beads workflow is complete. Convoy is staged and ready for launch.
 
 **Summary:**
 - Step 1: Beads hierarchy created (feature epic, phase sub-epics, task issues)
 - Step 2: Beads reviewed against plan (3-agent bidirectional coverage check)
+- Step 3: Convoy created and staged (waves computed, ready for dispatch)
 
 **Final outputs:**
 - Verified beads hierarchy with validated dependency graph
+- Staged convoy ready for epic-delivery launch
 - plans/{{feature}}/04-beads/beads-draft.md (draft structure)
 - plans/{{feature}}/04-beads/beads-report.md (creation report)
 - plans/{{feature}}/04-beads/beads-review.md (review findings)
 
 **Next steps:**
-- Run epic-delivery to dispatch the beads to polecats for implementation
+- Run epic-delivery skill with the convoy ID to launch Wave 1 to polecats
 """
 
 # ============================================================================

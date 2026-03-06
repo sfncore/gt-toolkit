@@ -61,6 +61,7 @@ version = 1
 
 # Note: vars are inherited from the parent workflow that expands this
 # Required vars: feature
+# Optional vars: rigs (comma-separated target rigs; empty = single-rig mode)
 
 # ============================================================================
 # STEP 1: LOAD INPUTS & SNAPSHOT BEADS

@@ -61,6 +61,10 @@ version = 3
 description = "Feature name (used for all input/output paths)"
 required = true
 
+[vars.rigs]
+description = "Comma-separated target rigs (e.g. gt_toolkit,sf_workflows,sfgastown). Empty = single-rig mode."
+required = false
+
 # ============================================================================
 # KICKOFF: Workflow banner
 # ============================================================================

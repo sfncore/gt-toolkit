@@ -58,6 +58,7 @@ version = 1
 
 # Note: vars are inherited from the parent workflow that expands this
 # Required vars: feature
+# Optional vars: rigs (comma-separated target rigs; empty = single-rig mode)
 
 # ============================================================================
 # STEP 1: LOAD INPUTS
@@ -415,6 +416,12 @@ mechanically decompose this plan:
 - Prerequisites → blocker dependencies
 - Acceptance criteria → issue acceptance criteria
 - Shared abstractions → standalone tasks in early phases
+- Target Rig per task → rig assignment (when `{{rigs}}` is set)
+
+**Cross-rig awareness (when `{{rigs}}` is set).** If tasks span multiple
+rigs ({{rigs}}), each task MUST include a `**Target Rig:**` field
+determined from its file paths. This drives per-rig epic creation and
+correct bead placement in the beads-creation step.
 
 **Be specific, not generic.** Don't write "add appropriate error handling" —
 write "use the existing `AppError` type from `internal/errors/errors.go`, wrapping
@@ -482,6 +489,7 @@ For each shared abstraction:
 
 **1.1 [Task title]**
 - **What:** [Specific description of work]
+- **Target Rig:** [one of {{rigs}} — determined from file paths. Omit if single-rig.]
 - **Files:**
   - Create: `path/to/new/file.ext` — [purpose]
   - Modify: `path/to/existing/file.ext` — [what changes]
